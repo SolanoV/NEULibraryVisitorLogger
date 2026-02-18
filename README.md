@@ -1,5 +1,7 @@
 # NEU Library Visitor Logger
 
+A reliable visitation recorder that allows students to log their visit to the library and staff to monitor and moderate logs by logging in using their institutional email.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
