@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from 'react'
-import { supabase } from '../utils/supabaseClient' // Adjust path if needed
-import { useRouter } from 'next/navigation' // Next.js tool for changing pages
+import { supabase } from '@/utils/supabaseClient' 
+import { useRouter } from 'next/navigation'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -10,7 +10,7 @@ export default function LoginForm() {
     // Check if they are already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.push('/dashboard') // Send them away instantly
+        router.push('/dashboard') 
       }
     })
 
@@ -28,19 +28,29 @@ export default function LoginForm() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Tell Google to send them straight to the dashboard after logging in!
         redirectTo: 'http://localhost:3000/dashboard' 
       }
     })
   }
 
   return (
-    <div className="w-full max-w-md p-8 bg-gray-900 rounded-xl border border-gray-800 shadow-2xl text-center">
-      <h1 className="text-2xl font-bold mb-2">NEU Library Visitor Logger</h1>
-      <p className="text-gray-400 mb-8">Please sign in to continue.</p>
+    <div className="w-full max-w-md p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl text-center relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      <div className="mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
+        <h1 className="text-2xl font-extrabold text-blue-600 dark:text-blue-400 tracking-tight mb-1">
+          New Era University
+        </h1>
+        <h2 className="text-xl font-bold text-black dark:text-white mb-3">
+          Library Visitor Logger
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
+          Please sign in with your institutional email to continue.
+        </p>
+      </div>
+
       <button 
         onClick={signInWithGoogle}
-        className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-200 text-black font-bold py-3 px-4 rounded transition-colors"
+        className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-black dark:text-white font-bold py-3.5 px-4 rounded-lg transition-all shadow-sm active:scale-[0.98]"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
           <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
