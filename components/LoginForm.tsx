@@ -36,7 +36,7 @@ export default function LoginForm() {
 
   return (
     <div className="w-full max-w-md p-8 bg-gray-900 rounded-xl border border-gray-800 shadow-2xl text-center">
-      <h1 className="text-3xl font-bold mb-2">Welcome</h1>
+      <h1 className="text-2xl font-bold mb-2">NEU Library Visitor Logger</h1>
       <p className="text-gray-400 mb-8">Please sign in to continue.</p>
       <button 
         onClick={signInWithGoogle}
