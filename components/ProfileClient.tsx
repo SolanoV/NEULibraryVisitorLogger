@@ -63,7 +63,7 @@ export default function ProfileClient() {
   return (
     <div className="w-full flex flex-col items-center justify-center min-h-[80vh] py-8 animate-in fade-in duration-500">
       
-      <Navbar user={user} onSignOut={signOut} />
+      
 
       {/* Expanded the max-width to 4xl to give the history table room to breathe */}
       <div className="w-full max-w-4xl p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl relative z-10">

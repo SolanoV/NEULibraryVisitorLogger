@@ -4,6 +4,7 @@ import { supabase } from '@/utils/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Navbar from './Navbar'
 import UserDashboard from './UserDashboard'
+import AdminDashboard from './AdminDashboard'
 
 export default function DashboardClient() {
   const [user, setUser] = useState<any>(null)
@@ -41,13 +42,12 @@ export default function DashboardClient() {
     router.push('/') 
   }
 
-  if (loading) return <div className="min-h-screen flex justify-center items-center text-black dark:text-white">Loading HOPE Systems...</div>
+  if (loading) return <div className="min-h-screen flex justify-center items-center text-black dark:text-white">Loading NEU Library Visitor Logger...</div>
 
   // GATEWAY CHECK: Is this user blocked by an Admin?
   if (profile?.is_blocked) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center gap-6">
-        <Navbar user={user} onSignOut={signOut} />
         <div className="p-8 bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-xl text-center max-w-md shadow-2xl">
           <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -60,14 +60,10 @@ export default function DashboardClient() {
   }
 
   return (
-    <div className="w-full flex flex-col items-center justify-center min-h-[80vh] py-8">
-      <Navbar user={user} onSignOut={signOut} />
-      
-      {/* Route them based on their database role */}
-      {profile?.role === 'admin' ? (
-        <div className="text-black dark:text-white">Admin Dashboard Coming Soon</div>
+    <div className="w-full flex-1 flex flex-col items-center pt-8 pb-12">
+      {profile?.role === 'admin' || profile?.role === 'superadmin' ? (
+        <AdminDashboard profile={profile} />
       ) : (
-        /* THIS IS WHERE WE PASS THE PROFILE DOWN! */
         <UserDashboard user={user} profile={profile} onSignOut={signOut} />
       )}
     </div>

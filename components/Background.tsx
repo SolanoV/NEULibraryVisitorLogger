@@ -6,8 +6,7 @@ type BackgroundProps = {
 
 export default function Background({ children }: BackgroundProps) {
   return (
-    // Notice the new adaptive background and text colors here!
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-black text-black dark:text-white p-24 overflow-hidden transition-colors duration-300">
+    <div className="relative flex min-h-screen w-full flex-col bg-slate-50 dark:bg-black text-black dark:text-white overflow-hidden transition-colors duration-300">
       
       {/* Animated Orbs Container */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
@@ -21,8 +20,8 @@ export default function Background({ children }: BackgroundProps) {
         <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] bg-indigo-500/20 dark:bg-indigo-900/20 rounded-full filter blur-[120px] animate-blob [animation-delay:4s] transition-colors duration-300"></div>
       </div>
 
-      {/* Foreground Content */}
-      <div className="relative z-10 w-full flex flex-col items-center justify-center">
+      {/* Foreground Content - Allowed to stretch naturally! */}
+      <div className="relative z-10 w-full flex-1 flex flex-col">
         {children}
       </div>
     </div>

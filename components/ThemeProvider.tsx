@@ -2,9 +2,14 @@
 
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+// By adding ...props and React.ComponentProps, we tell TypeScript it's safe 
+// to accept things like 'attribute' and 'defaultTheme' from layout.tsx!
+export function ThemeProvider({ 
+  children, 
+  ...props 
+}: React.ComponentProps<typeof NextThemesProvider>) {
   return (
-    <NextThemesProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <NextThemesProvider {...props}>
       {children}
     </NextThemesProvider>
   )
