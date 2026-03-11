@@ -4,6 +4,9 @@ import { supabase } from '@/utils/supabaseClient'
 import LogoutButton from './LogoutButton'
 
 export default function UserDashboard({ user, profile, onSignOut }: { user: any, profile: any, onSignOut: () => void }) {
+  // NEW: We store the profile in local state so we can update it without refreshing the page!
+  const [localProfile, setLocalProfile] = useState(profile)
+  
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
@@ -13,11 +16,14 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
   const [schoolId, setSchoolId] = useState('')
   const [college, setCollege] = useState('')
   const [position, setPosition] = useState('')
-  const [editableName, setEditableName] = useState(profile?.full_name || user?.user_metadata?.full_name || '')
+  const [editableName, setEditableName] = useState(localProfile?.full_name || user?.user_metadata?.full_name || '')
   
-  const isFirstTime = !profile?.user_type
+  const isFirstTime = !localProfile?.user_type
+  
+  const [selectedRole, setSelectedRole] = useState<'student' | 'staff' | null>(null)
   const [newUserType, setNewUserType] = useState<'student' | 'staff' | null>(null)
-  const activeUserType = isFirstTime ? newUserType : profile?.user_type
+  
+  const activeUserType = isFirstTime ? newUserType : localProfile?.user_type
 
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const reasonsList = ['Reading', 'Research', 'Use of Computer', 'Studying', 'Wi-Fi', 'Book Borrowing', 'Waiting for Classes', 'Other']
@@ -26,7 +32,7 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
 
   useEffect(() => {
     async function checkLatestVisit() {
-      if (!user?.id || profile?.user_type === 'staff' || isFirstTime || profile?.is_blocked) {
+      if (!user?.id || localProfile?.user_type === 'staff' || isFirstTime || localProfile?.is_blocked) {
         setIsLoadingInit(false)
         return
       }
@@ -50,7 +56,7 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
     }
     
     checkLatestVisit()
-  }, [user, profile, isFirstTime])
+  }, [user, localProfile, isFirstTime])
 
   const toggleReason = (reason: string) => {
     setSelectedReasons(prev => prev.includes(reason) ? prev.filter(r => r !== reason) : [...prev, reason])
@@ -70,11 +76,22 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
             full_name: editableName,
             college_office: college,
             school_id: activeUserType === 'student' ? schoolId : null,
-            position: activeUserType === 'staff' ? position : null
+            position: activeUserType === 'staff' ? position : null,
+            avatar_url: user?.user_metadata?.avatar_url
           })
           .eq('id', user.id)
         
         if (profileError) throw profileError
+
+        // NEW: Tell React the user is no longer a first-timer so the inputs disappear!
+        setLocalProfile((prev: any) => ({
+          ...prev,
+          user_type: activeUserType,
+          full_name: editableName,
+          college_office: college,
+          school_id: activeUserType === 'student' ? schoolId : null,
+          position: activeUserType === 'staff' ? position : null
+        }))
       }
 
       if (activeUserType === 'student') {
@@ -101,7 +118,7 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
   }
 
   // === UI: SECURITY INTERCEPTOR (BLOCKED USERS) ===
-  if (profile?.is_blocked) {
+  if (localProfile?.is_blocked) {
     return (
       <div className="w-full max-w-md p-8 bg-white dark:bg-gray-900 border-2 border-red-500 rounded-xl text-center animate-in fade-in zoom-in duration-300 shadow-2xl relative z-10 flex flex-col items-center">
         <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6 border border-red-200 dark:border-red-800">
@@ -173,24 +190,54 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
     )
   }
 
-  // === UI: IDENTITY SELECTION (Brand New Users) ===
+  // === UI: IDENTITY SELECTION (Radio Boxes + Continue Button) ===
   if (isFirstTime && !newUserType) {
     return (
       <div className="w-full max-w-md p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500 text-center">
         <h1 className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 tracking-tight mb-2">Welcome!</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-8">Before we continue, please tell us how you are accessing the library today.</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">Before we continue, please tell us how you are accessing the library today.</p>
         
-        <div className="flex flex-col gap-4">
-          <button onClick={() => setNewUserType('student')} className="w-full p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group flex flex-col items-center gap-2">
-            <span className="text-4xl mb-2">🎓</span>
-            <span className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">I am a Student</span>
-          </button>
-          
-          <button onClick={() => setNewUserType('staff')} className="w-full p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group flex flex-col items-center gap-2">
-            <span className="text-4xl mb-2">💼</span>
-            <span className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">I am a Staff Member</span>
-          </button>
+        <div className="flex flex-col gap-4 mb-8">
+          <label className={`cursor-pointer p-5 border-2 rounded-xl transition-all flex items-center gap-4 text-left ${selectedRole === 'student' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/50'}`}>
+            <input 
+              type="radio" 
+              name="user_role" 
+              value="student" 
+              checked={selectedRole === 'student'} 
+              onChange={() => setSelectedRole('student')} 
+              className="w-5 h-5 text-blue-600 focus:ring-blue-500" 
+            />
+            <div className="flex flex-col flex-1">
+              <span className="font-bold text-gray-900 dark:text-white text-lg">Student</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">I am a currently enrolled student.</span>
+            </div>
+            <span className="text-3xl opacity-80">🎓</span>
+          </label>
+
+          <label className={`cursor-pointer p-5 border-2 rounded-xl transition-all flex items-center gap-4 text-left ${selectedRole === 'staff' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500/50'}`}>
+            <input 
+              type="radio" 
+              name="user_role" 
+              value="staff" 
+              checked={selectedRole === 'staff'} 
+              onChange={() => setSelectedRole('staff')} 
+              className="w-5 h-5 text-blue-600 focus:ring-blue-500" 
+            />
+            <div className="flex flex-col flex-1">
+              <span className="font-bold text-gray-900 dark:text-white text-lg">Staff Member</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">I am faculty or university staff.</span>
+            </div>
+            <span className="text-3xl opacity-80">💼</span>
+          </label>
         </div>
+
+        <button 
+          disabled={!selectedRole}
+          onClick={() => setNewUserType(selectedRole)} 
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold py-3.5 px-4 rounded-lg transition-all shadow-sm active:scale-[0.98]"
+        >
+          Continue
+        </button>
       </div>
     )
   }
@@ -215,15 +262,16 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
   // === UI: THE MAIN FORM ===
   return (
     <div className={`w-full p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl relative z-10 transition-all duration-500 ease-in-out overflow-hidden ${isFirstTime ? 'max-w-4xl' : 'max-w-md'}`}>
-      <div className="mb-8 text-center border-b border-gray-100 dark:border-gray-800 pb-6">
-        <h1 className="flex flex-col gap-1 mb-2">
-          <span className="text-4xl font-extrabold text-blue-600 dark:text-blue-400 tracking-tight">Welcome,</span>
-          <span className="text-3xl font-medium text-gray-700 dark:text-gray-300">{displayGreetingName}!</span>
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-3">
-          {activeUserType === 'staff' ? 'Please complete your staff registration.' : 'Please log your visit below.'}
-        </p>
-      </div>
+    
+    <div className="mb-8 text-center border-b border-gray-100 dark:border-gray-800 pb-6">
+      <h1 className="text-3xl font-extrabold tracking-tight">
+        <span className="text-gray-700 dark:text-gray-300 font-medium">Welcome, </span>
+        <span className="text-blue-600 dark:text-blue-400">{displayGreetingName}!</span>
+      </h1>
+      <p className="text-gray-500 dark:text-gray-400 text-sm mt-3">
+        {activeUserType === 'staff' ? 'Please complete your staff registration.' : 'Please log your visit below.'}
+      </p>
+    </div>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
         <div className={`grid gap-8 ${isFirstTime ? 'md:grid-cols-2' : 'grid-cols-1'}`}>

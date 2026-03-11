@@ -25,32 +25,29 @@ export default function LoginForm() {
   }, [router])
 
   async function signInWithGoogle() {
-    // This helper detects if we are on Vercel or Localhost automatically
-    const getURL = () => {
-      let url =
-        process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this variable in Vercel
-        process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Vercel provides this automatically
-        window.location.origin; // Fallback to current browser domain
-      
-      // Ensure it's a clean URL and append the dashboard path
-      return url.endsWith('/') ? `${url}dashboard` : `${url}/dashboard`;
-    };
+  // This helper detects where you are currently standing
+  const getURL = () => {
+    // 1. Check if we are in a browser
+    if (typeof window === 'undefined') return '';
 
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: getURL(),
-      },
-    })
-  }
+    // 2. Use the current origin (localhost:3000 or neu-logger.vercel.app)
+    const siteUrl = window.location.origin;
+
+    // 3. Append the dashboard path
+    return `${siteUrl}/dashboard`;
+  };
+
+  await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      // Google will now send you back to wherever you started the login from!
+      redirectTo: getURL(),
+    },
+  })
+}
 
   return (
     <div className="w-full max-w-md p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
-      {/* - Centered text with flex-col & items-center
-        - Added Favicon
-        - Removed horizontal bottom border
-      */}
       <div className="mb-8 flex flex-col items-center text-center">
         <img 
           src="/favicon.ico" 
