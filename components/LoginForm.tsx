@@ -25,11 +25,22 @@ export default function LoginForm() {
   }, [router])
 
   async function signInWithGoogle() {
+    // This helper detects if we are on Vercel or Localhost automatically
+    const getURL = () => {
+      let url =
+        process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this variable in Vercel
+        process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Vercel provides this automatically
+        window.location.origin; // Fallback to current browser domain
+      
+      // Ensure it's a clean URL and append the dashboard path
+      return url.endsWith('/') ? `${url}dashboard` : `${url}/dashboard`;
+    };
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'http://localhost:3000/dashboard' 
-      }
+        redirectTo: getURL(),
+      },
     })
   }
 
