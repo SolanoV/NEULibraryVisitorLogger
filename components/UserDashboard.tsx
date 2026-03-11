@@ -77,7 +77,7 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
             college_office: college,
             school_id: activeUserType === 'student' ? schoolId : null,
             position: activeUserType === 'staff' ? position : null,
-            avatar_url: user?.user_metadata?.avatar_url
+            avatar_url: user?.user_metadata?.avatar_url || user?.user_metadata?.picture
           })
           .eq('id', user.id)
         
