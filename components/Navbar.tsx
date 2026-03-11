@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { supabase } from '@/utils/supabaseClient'
-import { useRouter, usePathname } from 'next/navigation' // <-- Added usePathname!
+import { useRouter, usePathname } from 'next/navigation'
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null)
@@ -13,15 +13,13 @@ export default function Navbar() {
   
   const { theme, setTheme } = useTheme()
   const router = useRouter()
-  const pathname = usePathname() // <-- Tracks the current URL
+  const pathname = usePathname()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // We moved the fetch logic into a reusable function
   const fetchAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
       setUser(session.user)
-      // Safely fetch profile, ignoring errors if it takes a split second to generate
       const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       setProfile(data || null)
     } else {
@@ -30,13 +28,11 @@ export default function Navbar() {
     }
   }
 
-  // 1. Run whenever the page URL changes (e.g. redirecting after login)
   useEffect(() => {
     setMounted(true)
     fetchAuth()
   }, [pathname])
 
-  // 2. Fallback listener for background auth changes
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
@@ -67,30 +63,52 @@ export default function Navbar() {
       <div className="w-full px-6 lg:px-10">
         <div className="flex justify-between items-center h-16">
           
+          {/* BRANDING WITH FAVICON */}
           <div className="flex-shrink-0 flex items-center">
-            <Link href={user ? "/dashboard" : "/"} className="flex flex-col sm:flex-row sm:gap-1.5 items-start sm:items-baseline">
-              <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400 tracking-tight leading-none">NEU Library</span>
-              <span className="text-lg font-bold text-gray-800 dark:text-gray-200 leading-none">Visitor Logger</span>
+            <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-3">
+              <img src="/favicon.ico" alt="Logo" className="w-8 h-8 object-contain" />
+              <div className="flex flex-col sm:flex-row sm:gap-1.5 items-start sm:items-baseline">
+                <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400 tracking-tight leading-none">NEU Library</span>
+                <span className="text-lg font-bold text-gray-800 dark:text-gray-200 leading-none">Visitor Logger</span>
+              </div>
             </Link>
           </div>
 
-          <div className="flex items-center gap-6">
+          {/* MAIN ACTIONS & AVATAR */}
+          <div className="flex items-center gap-4">
+            
+            {/* Distinct Dashboard Button with Borders */}
             {user && (
-              <Link href="/dashboard" className="text-sm font-bold text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors hidden sm:block">
+              <Link 
+                href="/dashboard" 
+                className="hidden sm:flex items-center justify-center px-4 py-2 text-sm font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all shadow-sm"
+              >
                 Dashboard
               </Link>
             )}
             
+            {/* Icon-only Theme Toggle with Borders */}
             {mounted && (
-              <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="text-sm font-semibold text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex items-center gap-2">
+              <button 
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+                className="flex items-center justify-center p-2.5 text-gray-500 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all shadow-sm"
+                aria-label="Toggle Theme"
+              >
                 {theme === 'dark' ? (
-                  <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg> <span className="hidden sm:inline">Light</span></>
+                  // Solid Moon Icon for Dark Mode
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
                 ) : (
-                  <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg> <span className="hidden sm:inline">Dark</span></>
+                  // Outline Sun Icon for Light Mode
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
                 )}
               </button>
             )}
 
+            {/* AVATAR & DROPDOWN */}
             <div className="relative ml-2" ref={dropdownRef}>
               <button onClick={() => setIsOpen(!isOpen)} className="flex items-center focus:outline-none">
                 {user?.user_metadata?.avatar_url ? (
@@ -120,6 +138,7 @@ export default function Navbar() {
               )}
             </div>
           </div>
+          
         </div>
       </div>
     </nav>
