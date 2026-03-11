@@ -27,24 +27,25 @@ Make sure you have [Node.js](https://nodejs.org/) installed on your machine and 
 
 ### 1. Clone the repository
 
-\`\`\`bash
-git clone https://github.com/yourusername/hope-library-logger.git
+```bash
+git clone https://github.com/yourusername/neu-library-visitor-logger.git
 cd hope-library-logger
-\`\`\`
+```
 
 ### 2. Install dependencies
 
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
 ### 3. Set up environment variables
 
 Create a `.env.local` file in the root of your project and add your Supabase connection details:
-\`\`\`env
+
+```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-\`\`\`
+```
 
 ### 4. Database Setup (Supabase)
 
@@ -55,7 +56,8 @@ Ensure your Supabase PostgreSQL database has the following core tables configure
 - `admin_logs`: Tracks all administrative actions (e.g., blocking/unblocking users).
 
 **Crucial Row Level Security (RLS) Policies Required:**
-\`\`\`sql
+
+```sql
 -- Allow Admins to update profiles (for blocking users)
 create policy "Admins can update profiles" on profiles for update using (
 auth.uid() in (select id from profiles where role = 'admin' or role = 'superadmin')
@@ -63,13 +65,14 @@ auth.uid() in (select id from profiles where role = 'admin' or role = 'superadmi
 
 -- Allow Admins to insert their own audit logs
 create policy "Admins can insert their own logs" on admin_logs for insert with check (auth.uid() = admin_id);
-\`\`\`
+```
 
 ### 5. Run the development server
 
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the application running.
 
 ## 📂 Project Structure Overview
