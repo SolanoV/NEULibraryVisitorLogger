@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabaseClient'
 import LogoutButton from './LogoutButton'
 
@@ -7,24 +7,50 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  // Real Database Form States
+  const [isLoadingInit, setIsLoadingInit] = useState(true) 
+  const [hasVisitedToday, setHasVisitedToday] = useState(false)
+  
   const [schoolId, setSchoolId] = useState('')
   const [college, setCollege] = useState('')
   const [position, setPosition] = useState('')
   const [editableName, setEditableName] = useState(profile?.full_name || user?.user_metadata?.full_name || '')
   
-  // Is this a brand new user?
   const isFirstTime = !profile?.user_type
-
-  // Type Tracking
   const [newUserType, setNewUserType] = useState<'student' | 'staff' | null>(null)
   const activeUserType = isFirstTime ? newUserType : profile?.user_type
 
-  // Reason Tracking (Only for students)
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const reasonsList = ['Reading', 'Research', 'Use of Computer', 'Studying', 'Wi-Fi', 'Book Borrowing', 'Waiting for Classes', 'Other']
 
   const displayGreetingName = editableName.split(',')[0].split(' ')[0] || 'User'
+
+  useEffect(() => {
+    async function checkLatestVisit() {
+      if (!user?.id || profile?.user_type === 'staff' || isFirstTime || profile?.is_blocked) {
+        setIsLoadingInit(false)
+        return
+      }
+      
+      const { data, error } = await supabase
+        .from('visits')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (data && data.length > 0) {
+        const lastVisitDate = new Date(data[0].created_at).toLocaleDateString()
+        const todayDate = new Date().toLocaleDateString()
+        
+        if (lastVisitDate === todayDate) {
+          setHasVisitedToday(true)
+        }
+      }
+      setIsLoadingInit(false)
+    }
+    
+    checkLatestVisit()
+  }, [user, profile, isFirstTime])
 
   const toggleReason = (reason: string) => {
     setSelectedReasons(prev => prev.includes(reason) ? prev.filter(r => r !== reason) : [...prev, reason])
@@ -32,13 +58,10 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Safety check for students
     if (activeUserType === 'student' && selectedReasons.length === 0) return 
     setIsSubmitting(true)
 
     try {
-      // 1. Profile Setup / Registration
       if (isFirstTime) {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -54,7 +77,6 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
         if (profileError) throw profileError
       }
 
-      // 2. ONLY log to the visits table if they are a student
       if (activeUserType === 'student') {
         const formattedReasons = selectedReasons.join(', ')
         const { error: visitError } = await supabase
@@ -72,6 +94,53 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isLoadingInit) {
+    return <div className="text-gray-500 dark:text-gray-400 font-medium animate-pulse">Loading dashboard...</div>
+  }
+
+  // === UI: SECURITY INTERCEPTOR (BLOCKED USERS) ===
+  if (profile?.is_blocked) {
+    return (
+      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-900 border-2 border-red-500 rounded-xl text-center animate-in fade-in zoom-in duration-300 shadow-2xl relative z-10 flex flex-col items-center">
+        <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6 border border-red-200 dark:border-red-800">
+          <svg className="w-10 h-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 className="text-3xl font-extrabold text-red-600 dark:text-red-400 mb-2">Access Denied</h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-8 font-medium">
+          Your account has been restricted by a Library Administrator. You cannot log entries or access the system at this time.
+          <br /><br />
+          <span className="text-sm font-normal text-gray-500">Please contact the NEU Library staff for assistance.</span>
+        </p>
+        <LogoutButton onSignOut={onSignOut} className="w-full" />
+      </div>
+    )
+  }
+
+  // === UI: ALREADY VISITED TODAY INTERCEPTOR ===
+  if (hasVisitedToday && !showSuccess) {
+    return (
+      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-900/50 rounded-xl text-center animate-in fade-in zoom-in duration-300 shadow-2xl relative z-10 flex flex-col items-center">
+        <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+          <span className="text-3xl">📅</span>
+        </div>
+        <h2 className="text-2xl font-bold text-black dark:text-white mb-2">Already Checked In!</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">
+          It looks like you have already logged a visit to the library today, <span className="font-semibold text-black dark:text-white">{displayGreetingName}</span>.
+        </p>
+        
+        <button 
+          onClick={() => setHasVisitedToday(false)} 
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-lg transition-all shadow-sm active:scale-[0.98] mb-4"
+        >
+          Submit Another Entry
+        </button>
+        <LogoutButton onSignOut={onSignOut} />
+      </div>
+    )
   }
 
   // === UI: SUCCESS SCREEN ===
@@ -93,12 +162,12 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
         <button 
           onClick={() => {
             setShowSuccess(false)
+            setHasVisitedToday(false)
             setSelectedReasons([]) 
-            window.location.reload()
           }} 
           className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white underline transition-colors"
         >
-          Return to Dashboard
+          Submit another entry
         </button>
       </div>
     )
@@ -143,7 +212,7 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
     )
   }
 
-  // === UI: THE MAIN FORM (First-time setup or Returning Student Check-in) ===
+  // === UI: THE MAIN FORM ===
   return (
     <div className={`w-full p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl relative z-10 transition-all duration-500 ease-in-out overflow-hidden ${isFirstTime ? 'max-w-4xl' : 'max-w-md'}`}>
       <div className="mb-8 text-center border-b border-gray-100 dark:border-gray-800 pb-6">
@@ -159,7 +228,6 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
         <div className={`grid gap-8 ${isFirstTime ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
           
-          {/* FIRST TIME USER DETAILS */}
           {isFirstTime && (
             <div className="space-y-5 animate-in fade-in slide-in-from-left-8 duration-500">
               <div>
@@ -167,7 +235,6 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
                 <input required type="text" value={editableName} onChange={(e) => setEditableName(e.target.value)} className="w-full p-3.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" />
               </div>
 
-              {/* STUDENT ONLY: School ID */}
               {activeUserType === 'student' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">School ID</label>
@@ -175,7 +242,6 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
                 </div>
               )}
 
-              {/* STAFF ONLY: Position */}
               {activeUserType === 'staff' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Position / Job Title</label>
@@ -183,7 +249,6 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
                 </div>
               )}
 
-              {/* SHARED: College Dropdown */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">College / Office</label>
                 <select required value={college} onChange={(e) => setCollege(e.target.value)} className="w-full p-3.5 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer">
@@ -202,7 +267,6 @@ export default function UserDashboard({ user, profile, onSignOut }: { user: any,
             </div>
           )}
 
-          {/* STUDENT ONLY: Reason Selection */}
           {activeUserType === 'student' && (
             <div className="flex flex-col justify-center animate-in fade-in">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">

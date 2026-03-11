@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function DashboardPage() {
   return (
-    <Background>
+    <div className="flex-1 flex items-center justify-center w-full p-4">
       <DashboardClient />
-    </Background>
+    </div>
   )
 }

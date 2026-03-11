@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function ProfilePage() {
   return (
-    <Background>
+    <div className="flex-1 flex items-center justify-center w-full p-4">
       <ProfileClient />
-    </Background>
+    </div>
   )
 }
