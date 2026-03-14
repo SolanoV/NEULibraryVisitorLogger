@@ -2,6 +2,8 @@
 
 NEU Library Visitor Logger is a comprehensive, role-based visitor logging and management system built for the NEU Library. It streamlines the check-in process for students and staff while providing library administrators with a powerful, real-time dashboard to monitor traffic, analyze visit trends, and manage facility access.
 
+Webiste: [NEU Library Visitor Logger](https://neu-library-visitor-logger.vercel.app/)
+
 ## ✨ Key Features
 
 - **Role-Based Access Control:** Secure, tailored experiences for Students, Staff Members, Administrators, and Superadmins.
