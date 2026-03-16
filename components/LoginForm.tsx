@@ -42,6 +42,11 @@ export default function LoginForm() {
     options: {
       // Google will now send you back to wherever you started the login from!
       redirectTo: getURL(),
+
+      queryParams: {
+          hd: 'neu.edu.ph',
+          prompt: 'select_account'
+        }
     },
   })
 }

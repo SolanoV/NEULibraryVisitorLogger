@@ -91,7 +91,7 @@ export default function ProfileClient({ targetUserId }: { targetUserId?: string 
         {/* ROLE STATUS BADGE (Pinned to Top Right) */}
         <div className="absolute top-6 right-6 hidden sm:block">
           <span className="px-4 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm">
-            {profile?.role === 'superadmin' ? 'Super Administrator' : profile?.role === 'admin' ? 'Admin Staff' : 'Student'}
+            {profile?.role === 'superadmin' ? 'Super Administrator' : profile?.role === 'admin' ? 'Admin Staff' : profile?.user_type === 'staff' ? 'Staff Member' : 'Student'}
           </span>
         </div>
 
