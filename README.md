@@ -1,8 +1,13 @@
 # NEU Library Visitor Logger
 
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Supabase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=supabase&logoColor=black)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+
 NEU Library Visitor Logger is a comprehensive, role-based visitor logging and management system built for the NEU Library. It streamlines the check-in process for students and staff while providing library administrators with a powerful, real-time dashboard to monitor traffic, analyze visit trends, and manage facility access.
 
-Webiste: [NEU Library Visitor Logger](https://neu-library-visitor-logger.vercel.app/)
+🌐 **Live Demo:** [NEU Library Visitor Logger](https://neu-library-visitor-logger.vercel.app/)
 
 ## ✨ Key Features
 
