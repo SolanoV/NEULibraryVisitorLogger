@@ -253,9 +253,13 @@ export default function AdminDashboard({ profile }: { profile: any }) {
                       <div className="flex flex-wrap items-center gap-3 mb-1.5 relative">
                         
                         <div className="relative inline-block">
-                          <span className="font-extrabold text-black dark:text-white text-lg cursor-help border-b border-dashed border-gray-400 dark:border-gray-600 peer">
+                          {/* CHANGED: This is now a clickable button that pushes to the profile URL */}
+                          <button 
+                            onClick={() => router.push(`/profile/${visit.user_id}`)}
+                            className="font-extrabold text-left text-black dark:text-white text-lg cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors peer"
+                          >
                             {visit.profiles?.full_name || 'Unknown User'}
-                          </span>
+                          </button>
                           
                           <div className="absolute left-4 top-full mt-2 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 opacity-0 invisible peer-hover:opacity-100 peer-hover:visible hover:opacity-100 hover:visible transition-all duration-200 z-[9999]">
                             <div className="flex items-center gap-3 mb-3">
@@ -368,7 +372,13 @@ export default function AdminDashboard({ profile }: { profile: any }) {
                           <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs">{user.full_name?.charAt(0) || 'U'}</div>
                         )}
                         <div className="truncate">
-                          <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{user.full_name}</p>
+                          {/* CHANGED: Name is clickable in the restricted list as well */}
+                          <button 
+                            onClick={() => router.push(`/profile/${user.id}`)} 
+                            className="font-bold text-sm text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
+                          >
+                            {user.full_name}
+                          </button>
                           <p className="text-xs text-gray-500 truncate">{user.school_id || 'Staff'}</p>
                         </div>
                     </div>
