@@ -3,31 +3,68 @@ import { supabase } from '@/utils/supabaseClient'
 import { Visit, Profile } from '@/types'
 
 export function useAdminData(profile: Profile) {
+  // --- LOGS STATE ---
   const [visits, setVisits] = useState<Visit[]>([])
-  const [blockedUsers, setBlockedUsers] = useState<Profile[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  
   const [dateFilter, setDateFilter] = useState('today') 
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('') 
-
+  const [userTypeFilter, setUserTypeFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 50
 
+  // --- PROFILES STATE ---
+  const [activeTab, setActiveTab] = useState<'logs' | 'profiles'>('logs')
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+  const [blockedUsers, setBlockedUsers] = useState<Profile[]>([])
+  const [profileSearch, setProfileSearch] = useState('')
+  const [profileTypeFilter, setProfileTypeFilter] = useState('')
+  const [profileRoleFilter, setProfileRoleFilter] = useState('')
+
+  const [loading, setLoading] = useState(true)
+
   const reasonsList = ['Reading', 'Research', 'Use of Computer', 'Studying', 'Wi-Fi', 'Book Borrowing', 'Waiting for Classes', 'Other']
 
-  // 1. DATA FETCHING
+  // === FILTER MEMORY ===
+  // 1. Restore filters from the browser's memory when the dashboard loads
+  useEffect(() => {
+    const savedFilters = sessionStorage.getItem('adminDashboardFilters')
+    if (savedFilters) {
+      const parsed = JSON.parse(savedFilters)
+      if (parsed.searchQuery) setSearchQuery(parsed.searchQuery)
+      if (parsed.dateFilter) setDateFilter(parsed.dateFilter)
+      if (parsed.categoryFilter) setCategoryFilter(parsed.categoryFilter)
+      if (parsed.userTypeFilter) setUserTypeFilter(parsed.userTypeFilter)
+      
+      if (parsed.activeTab) setActiveTab(parsed.activeTab)
+      if (parsed.profileSearch) setProfileSearch(parsed.profileSearch)
+      if (parsed.profileTypeFilter) setProfileTypeFilter(parsed.profileTypeFilter)
+      if (parsed.profileRoleFilter) setProfileRoleFilter(parsed.profileRoleFilter)
+    }
+  }, [])
+
+  // 2. Save filters to memory automatically whenever you type or click a dropdown
+  useEffect(() => {
+    const filters = { 
+      searchQuery, dateFilter, categoryFilter, userTypeFilter,
+      activeTab, profileSearch, profileTypeFilter, profileRoleFilter
+    }
+    sessionStorage.setItem('adminDashboardFilters', JSON.stringify(filters))
+  }, [searchQuery, dateFilter, categoryFilter, userTypeFilter, activeTab, profileSearch, profileTypeFilter, profileRoleFilter])
+
+
+  // === 1. DATA FETCHING ===
   useEffect(() => {
     async function fetchAllData() {
       setLoading(true)
 
+      // A. Fetch Visits
       let query = supabase
         .from('visits')
         .select(`
           id, created_at, reason, user_id,
-          profiles ( id, full_name, school_id, college_office, is_blocked, avatar_url )
+          profiles ( id, full_name, school_id, college_office, is_blocked, avatar_url, user_type, role ) 
         `)
         .order('created_at', { ascending: false })
         .limit(1000)
@@ -55,19 +92,41 @@ export function useAdminData(profile: Profile) {
       if (visitsError) console.error("Visits Query Error:", visitsError.message)
       else if (visitsData) setVisits(visitsData as Visit[])
 
-      const { data: blockedData } = await supabase
+      // B. Fetch ALL Profiles (Used for the new tab!)
+      const { data: profilesData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('is_blocked', true)
+        .order('full_name', { ascending: true })
       
-      if (blockedData) setBlockedUsers(blockedData as Profile[])
+      if (profilesData) {
+        const typedProfiles = profilesData as Profile[]
+        setAllProfiles(typedProfiles)
+        // Automatically derive blocked users from the master list
+        setBlockedUsers(typedProfiles.filter(p => p.is_blocked))
+      }
+      
       setLoading(false)
     }
     fetchAllData()
   }, [dateFilter, customStart, customEnd])
 
-  // 2. ACTIONS
+
+  // === 2. ACTIONS ===
   const toggleBlockStatus = async (userId: string, currentStatus: boolean, userName: string) => {
+    if (userId === profile.id) {
+      alert("Self-harm detected! You cannot block your own account.")
+      return
+    }
+
+    // Fetch the target user's role to check hierarchy
+    const { data: targetUser } = await supabase.from('profiles').select('role').eq('id', userId).single()
+    const targetIsAdmin = targetUser?.role === 'admin' || targetUser?.role === 'superadmin'
+    
+    if (targetIsAdmin && profile.role !== 'superadmin') {
+      alert("Permission Denied: Only a Superadmin can modify other Admin accounts.")
+      return
+    }
+    
     const newStatus = !currentStatus
     const { error } = await supabase
       .from('profiles')
@@ -82,25 +141,37 @@ export function useAdminData(profile: Profile) {
         action: newStatus ? 'Blocked User' : 'Unblocked User'
       }])
 
+      // Update the Visits table state
       setVisits(visits.map(v => 
         v.user_id === userId 
           ? { ...v, profiles: { ...v.profiles, is_blocked: newStatus } } 
           : v
       ))
 
-      const { data: newBlocked } = await supabase.from('profiles').select('*').eq('is_blocked', true)
-      if (newBlocked) setBlockedUsers(newBlocked)
+      // Update the Profiles table state and Sidebar
+      const updatedProfiles = allProfiles.map(p => p.id === userId ? { ...p, is_blocked: newStatus } : p)
+      setAllProfiles(updatedProfiles)
+      setBlockedUsers(updatedProfiles.filter(p => p.is_blocked))
     } else {
       console.error(error.message)
       alert("Security Error: Check Supabase RLS policies.")
     }
   }
 
-  // 3. FILTERING & MATH
+
+  // === 3. FILTERING & MATH: ENTRY LOGS ===
   const filteredData = useMemo(() => {
     return visits.filter(v => {
+      const viewerIsStaffOnly = profile.role === 'user' && profile.user_type === 'staff';
+      if (viewerIsStaffOnly && (v.profiles?.role === 'admin' || v.profiles?.role === 'superadmin')) {
+        return false;
+      }
+      
       const safeReason = v.reason || ''
       if (categoryFilter && !safeReason.includes(categoryFilter)) return false
+
+      const actualUserType = v.profiles?.user_type === 'staff' ? 'staff' : 'student'
+      if (userTypeFilter && actualUserType !== userTypeFilter) return false
 
       if (searchQuery) {
         const lowerQ = searchQuery.toLowerCase()
@@ -118,11 +189,11 @@ export function useAdminData(profile: Profile) {
       }
       return true
     })
-  }, [visits, searchQuery, categoryFilter])
+  }, [visits, searchQuery, categoryFilter, userTypeFilter, profile])
 
   useEffect(() => {
     setCurrentPage(1) 
-  }, [searchQuery, categoryFilter, dateFilter, customStart, customEnd])
+  }, [searchQuery, categoryFilter, userTypeFilter, dateFilter, customStart, customEnd])
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -155,24 +226,67 @@ export function useAdminData(profile: Profile) {
     return Object.entries(counts).map(([date, count]) => ({ date, count })).slice(0, 7).reverse()
   }, [visits, categoryFilter])
 
-  // 4. RETURN EVERYTHING THE UI NEEDS
+
+  // === 4. FILTERING & MATH: PROFILES ===
+  const filteredProfiles = useMemo(() => {
+    return allProfiles.filter(p => {
+      const viewerIsStaffOnly = profile.role === 'user' && profile.user_type === 'staff';
+      if (viewerIsStaffOnly && (p.role === 'admin' || p.role === 'superadmin')) {
+        return false;
+      }
+      
+        // Role Math
+      if (profileRoleFilter && p.role !== profileRoleFilter) return false
+      
+      // User Type Math
+      const actualType = p.user_type === 'staff' ? 'staff' : 'student'
+      if (profileTypeFilter && actualType !== profileTypeFilter) return false
+      
+      // Search Math
+      if (profileSearch) {
+        const lowerQ = profileSearch.toLowerCase()
+        const matches = (
+          (p.full_name || '').toLowerCase().includes(lowerQ) ||
+          (p.school_id || '').toLowerCase().includes(lowerQ) ||
+          (p.college_office || '').toLowerCase().includes(lowerQ)
+        )
+        if (!matches) return false
+      }
+      return true
+    })
+  }, [allProfiles, profileSearch, profileTypeFilter, profileRoleFilter])
+
+
+  // === 5. RETURN EVERYTHING THE UI NEEDS ===
   return {
     loading,
     blockedUsers,
+    
+    // Logs Tab
     searchQuery, setSearchQuery,
     dateFilter, setDateFilter,
     customStart, setCustomStart,
     customEnd, setCustomEnd,
     categoryFilter, setCategoryFilter,
+    userTypeFilter, setUserTypeFilter,
     currentPage, setCurrentPage,
     itemsPerPage,
     reasonsList,
-    filteredData, // <--- CHANGED THIS LINE
+    filteredData,
     paginatedData,
     totalPages,
     startIndex,
     reasonChartData,
     trafficChartData,
+    
+    // Profiles Tab
+    activeTab, setActiveTab,
+    profileSearch, setProfileSearch,
+    profileTypeFilter, setProfileTypeFilter,
+    profileRoleFilter, setProfileRoleFilter,
+    filteredProfiles,
+    
+    // Actions
     toggleBlockStatus
   }
 }

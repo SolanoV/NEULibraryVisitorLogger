@@ -1,14 +1,17 @@
 // types/index.ts
 
 export interface Profile {
-  id: string;
-  full_name: string | null;
-  school_id: string | null;
-  college_office: string | null;
-  is_blocked: boolean;
-  avatar_url: string | null;
-  role: 'student' | 'staff' | 'admin' | 'superadmin';
-  user_type: 'student' | 'staff';
+  id: string
+  full_name?: string
+  avatar_url?: string
+  school_id?: string
+  college_office?: string
+  position?: string
+  is_blocked?: boolean
+  
+  // CHANGED: These now perfectly reflect our new security hierarchy!
+  user_type?: 'student' | 'staff' | null
+  role?: 'user' | 'admin' | 'superadmin' | null
 }
 
 export interface Visit {
