@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabaseClient' 
 import { useRouter } from 'next/navigation'
 import Navbar from './Navbar'
-import UserDashboard from './UserDashboard'
-import AdminDashboard from './AdminDashboard'
+import UserDashboard from './features/UserDashboard'
+import AdminDashboard from './features/AdminDashboard'
 
 export default function DashboardClient() {
   const [user, setUser] = useState<any>(null)

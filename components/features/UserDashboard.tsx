@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabaseClient'
-import LogoutButton from './LogoutButton'
+import LogoutButton from '../ui/LogoutButton'
 
 export default function UserDashboard({ user, profile, onSignOut }: { user: any, profile: any, onSignOut: () => void }) {
   // NEW: We store the profile in local state so we can update it without refreshing the page!

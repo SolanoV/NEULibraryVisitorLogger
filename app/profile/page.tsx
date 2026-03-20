@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Background from '@/components/Background'
-import ProfileClient from "@/components/ProfileClient";
+import ProfileClient from "@/components/features/ProfileClient";
 
 export const metadata: Metadata = {
   title: "My Profile",

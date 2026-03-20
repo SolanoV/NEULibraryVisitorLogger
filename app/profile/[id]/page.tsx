@@ -1,6 +1,6 @@
 'use client'
 import { use } from 'react'
-import ProfileClient from '@/components/ProfileClient'
+import ProfileClient from '@/components/features/ProfileClient'
 
 // Next.js 15 requires params to be a Promise
 export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
