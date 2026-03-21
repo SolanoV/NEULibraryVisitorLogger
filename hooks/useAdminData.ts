@@ -6,7 +6,7 @@ export function useAdminData(profile: Profile) {
   // --- LOGS STATE ---
   const [visits, setVisits] = useState<Visit[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [dateFilter, setDateFilter] = useState('today') 
+  const [dateFilter, setDateFilter] = useState('7days') 
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('') 
