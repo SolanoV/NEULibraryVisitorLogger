@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s | NEU Library Visitor Logger",
     default: "NEU Library Visitor Logger"
   },
-  description: "Made by Vinz Solano",
+  description: "A digitalised format of the standard handwritten the NEU Library currently uses",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
