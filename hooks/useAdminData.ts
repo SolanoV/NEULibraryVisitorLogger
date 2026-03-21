@@ -254,7 +254,7 @@ export function useAdminData(profile: Profile) {
       }
       return true
     })
-  }, [allProfiles, profileSearch, profileTypeFilter, profileRoleFilter])
+  }, [allProfiles, profileSearch, profileTypeFilter, profileRoleFilter, profile])
 
 
   // === 5. RETURN EVERYTHING THE UI NEEDS ===
