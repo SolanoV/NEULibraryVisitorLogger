@@ -44,7 +44,7 @@ export default function LoginForm() {
       redirectTo: getURL(),
 
       queryParams: {
-          //hd: 'neu.edu.ph',
+          hd: 'neu.edu.ph',
           prompt: 'select_account'
         }
     },
